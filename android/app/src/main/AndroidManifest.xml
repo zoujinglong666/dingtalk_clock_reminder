@@ -12,7 +12,7 @@
         tools:ignore="QueryAllPackagesPermission" />
     
     <application
-        android:label="dingtalk_clock_reminder"
+        android:label="@string/appName"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

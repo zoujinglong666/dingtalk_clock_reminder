@@ -4,6 +4,7 @@ import 'package:dingtalk_clock_reminder/models/alarm_time.dart';
 import 'package:dingtalk_clock_reminder/widgets/tech_widgets.dart';
 import 'package:dingtalk_clock_reminder/screens/reminder_settings_screen.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:flutter_foreground_task/models/notification_icon.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -73,7 +74,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await FlutterForegroundTask.startService(
       notificationTitle: '钉钉打卡提醒',
       notificationText: '服务正在运行中',
-      notificationIcon: '@mipmap/ic_launcher',
+      notificationIcon: NotificationIcon(backgroundColor: primaryColor, metaDataName: '1'),
     );
   }
 
