@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dingtalk_clock_reminder/models/alarm_time.dart';
 import 'package:dingtalk_clock_reminder/widgets/tech_widgets.dart';
-import 'home_screen.dart';
-import 'calendar_screen.dart';
+import 'package:dingtalk_clock_reminder/screens/reminder_settings_screen.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -33,7 +33,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSettings();
+    _loadSettings().then((_) {
+      // 根据设置状态启动或停止前台服务
+      if (_enableForegroundService) {
+        _startForegroundService();
+      } else {
+        _stopForegroundService();
+      }
+    });
   }
 
   Future<void> _loadSettings() async {
@@ -59,6 +66,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setBool('skipHolidays', _skipHolidays);
     await prefs.setBool('skipWeekends', _skipWeekends);
     await prefs.setBool('remindInSilentMode', _remindInSilentMode);
+  }
+
+  // 启动前台服务
+  void _startForegroundService() async {
+    await FlutterForegroundTask.startService(
+      notificationTitle: '钉钉打卡提醒',
+      notificationText: '服务正在运行中',
+      notificationIcon: '@mipmap/ic_launcher',
+    );
+  }
+
+  // 停止前台服务
+  void _stopForegroundService() async {
+    await FlutterForegroundTask.stopService();
   }
 
   @override
@@ -93,6 +114,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _enableForegroundService = value;
                         });
                         _saveSettings();
+                        if (value) {
+                          _startForegroundService();
+                        } else {
+                          _stopForegroundService();
+                        }
                       },
                       activeColor: primaryColor,
                     ),
@@ -177,7 +203,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: Text('设置提醒铃声和震动'),
                       trailing: Icon(Icons.arrow_forward_ios),
                       onTap: () {
-                        // 跳转到提醒方式设置页面
+                        Navigator.push(
+                          context, 
+                          MaterialPageRoute(
+                            builder: (context) => ReminderSettingsScreen(),
+                          ),
+                        );
                       },
                     ),
                   ),

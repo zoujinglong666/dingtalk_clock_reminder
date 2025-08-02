@@ -49,20 +49,29 @@ class DingtalkService {
   
   // 尝试跳转到打卡页面（可能不总是有效）
   Future<void> openClockInPage() async {
-    // 这是一个尝试性的实现，实际效果可能因钉钉版本而异
-    final Uri clockInUri = Uri(
-      scheme: 'dingtalk',
-      host: 'dingtalkclient/page/link',
-      queryParameters: {
-        'url': 'https://attend.dingtalk.com',
-      },
-    );
-    
-    if (await canLaunchUrl(clockInUri)) {
-      await launchUrl(clockInUri);
-    } else {
-      // 如果 URI Scheme 无效，则直接打开钉钉
-      await openDingtalk();
-    }
+    // // 这是一个尝试性的实现，实际效果可能因钉钉版本而异
+    // // 尝试使用不同的URI格式跳转到钉钉打卡页面
+    // final Uri clockInUri = Uri(
+    //   scheme: 'dingtalk',
+    //   host: 'dingtalkclient',
+    //   path: '/checkin',
+    // );
+    //
+    // if (await canLaunchUrl(clockInUri)) {
+    //   await launchUrl(clockInUri);
+    // } else {
+    //   // 如果 URI Scheme 无效，则直接打开钉钉
+    //   await openDingtalk();
+    // }
+
+
+
+      const url = 'dingtalk://dingtalkclient/page/link?url=https%3A%2F%2Fattend.dingtalk.com'; // 非官方，仅供尝试
+      if (await canLaunch(url)) {
+        await launch(url);
+      } else {
+        throw '无法打开钉钉';
+      }
+
   }
 }

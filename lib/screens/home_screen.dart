@@ -4,11 +4,13 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
+import 'dart:convert';
 import '../services/notification_service.dart';
 import '../services/alarm_service.dart';
 import '../services/dingtalk_service.dart';
 import '../services/background_task_service.dart';
 import '../models/clock_record.dart';
+import '../models/daily_clock_data.dart';
 
 // 钉钉风格颜色主题
 const Color primaryColor = Color(0xFF1677FF); // 钉钉蓝色
@@ -146,6 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hasClockedIn = false; // 是否已上班打卡
   DateTime? _lastClockInTime; // 最后一次上班打卡时间
   DateTime? _lastClockOutTime; // 最后一次下班打卡时间
+  bool _isLate = false; // 是否迟到
+  bool _isEarlyLeave = false; // 是否早退
 
   Future<void> _loadAlarmTimes() async {
     // 根据今天的日期设置上下班时间
@@ -166,16 +170,30 @@ class _HomeScreenState extends State<HomeScreen> {
     final prefs = await SharedPreferences.getInstance();
     // 加载今天的打卡状态
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    
+    // 从新的数据结构加载
+    final clockDataJson = prefs.getString('clock_data');
+    Map<String, dynamic> clockDataMap = {};
+    if (clockDataJson != null) {
+      clockDataMap = jsonDecode(clockDataJson);
+    }
+    
     setState(() {
-      _hasClockedIn = prefs.getBool('clock_in_$today') ?? false;
-      final lastClockInStr = prefs.getString('clock_in_time_$today');
-      _lastClockInTime = lastClockInStr != null
-          ? DateTime.parse(lastClockInStr)
-          : null;
-      final lastClockOutStr = prefs.getString('clock_out_$today');
-      _lastClockOutTime = lastClockOutStr != null
-          ? DateTime.parse(lastClockOutStr)
-          : null;
+      if (clockDataMap.containsKey(today)) {
+        final dailyData = DailyClockData.fromJson(clockDataMap[today]);
+        _hasClockedIn = dailyData.hasClockedIn;
+        _lastClockInTime = dailyData.clockInTime;
+        _lastClockOutTime = dailyData.clockOutTime;
+        _isLate = dailyData.isLate;
+        _isEarlyLeave = dailyData.isEarlyLeave;
+      } else {
+        // 不存在当天数据
+        _hasClockedIn = false;
+        _lastClockInTime = null;
+        _lastClockOutTime = null;
+        _isLate = false;
+        _isEarlyLeave = false;
+      }
     });
   }
 
@@ -183,6 +201,88 @@ class _HomeScreenState extends State<HomeScreen> {
     for (int i = 0; i < _alarmTimes.length; i++) {
       await _alarmService.scheduleAlarm(i, _alarmTimes[i]);
     }
+  }
+
+  // 显示下班补卡时间选择器
+  Future<void> _showClockOutOptions() async {
+    final initialTime = const TimeOfDay(hour: 18, minute: 0);
+
+    final selectedTime = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
+    );
+
+    if (selectedTime != null) {
+      final now = DateTime.now();
+      final clockTime = DateTime(now.year, now.month, now.day, selectedTime.hour, selectedTime.minute);
+      await _markAsClockedOut(clockTime);
+    }
+  }
+
+  // 下班补卡实现
+  Future<void> _markAsClockedOut(DateTime clockTime) async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    // 获取现有的打卡数据
+    final clockDataJson = prefs.getString('clock_data');
+    Map<String, dynamic> clockDataMap = {};
+    if (clockDataJson != null) {
+      clockDataMap = jsonDecode(clockDataJson);
+    }
+
+    DailyClockData dailyData;
+    if (clockDataMap.containsKey(today)) {
+      // 已存在当天数据，更新下班打卡时间
+      final existingData = DailyClockData.fromJson(clockDataMap[today]);
+      if (existingData.hasClockedIn) {
+        // 已经上班打卡，直接更新下班时间
+        dailyData = DailyClockData.clockedIn(
+          date: today,
+          clockInTime: existingData.clockInTime!,
+          clockOutTime: clockTime,
+        );
+      } else {
+        // 没有上班打卡记录，先创建上班打卡记录（默认9:00）
+        dailyData = DailyClockData.clockedIn(
+          date: today,
+          clockInTime: DateTime.now().copyWith(hour: 9, minute: 0),
+          clockOutTime: clockTime,
+        );
+      }
+    } else {
+      // 不存在当天数据，创建新数据（包括默认上班打卡）
+      dailyData = DailyClockData.clockedIn(
+        date: today,
+        clockInTime: DateTime.now().copyWith(hour: 9, minute: 0),
+        clockOutTime: clockTime,
+      );
+    }
+
+    // 更新数据
+    clockDataMap[today] = dailyData.toJson();
+
+    // 保存回SharedPreferences
+    prefs.setString('clock_data', jsonEncode(clockDataMap));
+
+    // 更新UI
+    setState(() {
+      _lastClockOutTime = clockTime;
+      _isEarlyLeave = clockTime.hour < 18 || (clockTime.hour == 18 && clockTime.minute < 0);
+    });
+
+    // 显示补卡成功通知
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('下班补卡成功'),
+      ),
+    );
   }
 
   Future<void> _startForegroundService() async {
@@ -255,14 +355,36 @@ class _HomeScreenState extends State<HomeScreen> {
                               size: 16,
                             ),
                             const SizedBox(width: 5),
-                            Text(
-                              _hasClockedIn
-                                  ? '${_lastClockInTime!.hour.toString().padLeft(2, '0')}:${_lastClockInTime!.minute.toString().padLeft(2, '0')}已打卡'
-                                  : '未打卡',
-                              style: TextStyle(
-                                color: _hasClockedIn ? successColor : lightTextColor,
-                                fontSize: 14,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children:
+                              [
+                                Text(
+                                  _hasClockedIn
+                                      ? '${_lastClockInTime!.hour.toString().padLeft(2, '0')}:${_lastClockInTime!.minute.toString().padLeft(2, '0')}已打卡'
+                                      : '未打卡',
+                                  style: TextStyle(
+                                    color: _hasClockedIn ? successColor : lightTextColor,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                if (_hasClockedIn && _isLate)
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: errorColor.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                    child: const Text(
+                                      '迟到',
+                                      style: TextStyle(
+                                        color: errorColor,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ],
                         ),
@@ -290,14 +412,45 @@ class _HomeScreenState extends State<HomeScreen> {
                               size: 16,
                             ),
                             const SizedBox(width: 5),
-                            Text(
-                              _lastClockOutTime != null
-                                  ? '${_lastClockOutTime!.hour.toString().padLeft(2, '0')}:${_lastClockOutTime!.minute.toString().padLeft(2, '0')}已打卡'
-                                  : '未打卡',
-                              style: TextStyle(
-                                color: _lastClockOutTime != null ? successColor : lightTextColor,
-                                fontSize: 14,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children:
+                              [
+                                GestureDetector(
+                                  onTap: () {
+                                    if (_lastClockOutTime == null) {
+                                      // 调用补卡方法
+                                      _showClockOutOptions();
+                                    }
+                                  },
+                                  child: Text(
+                                    _lastClockOutTime != null
+                                        ? '${_lastClockOutTime!.hour.toString().padLeft(2, '0')}:${_lastClockOutTime!.minute.toString().padLeft(2, '0')}已打卡'
+                                        : '未打卡',
+                                    style: TextStyle(
+                                      color: _lastClockOutTime != null ? successColor : primaryColor,
+                                      fontSize: 14,
+                                      decoration: _lastClockOutTime == null ? TextDecoration.underline : null,
+                                    ),
+                                  ),
+                                ),
+                                if (_lastClockOutTime != null && _isEarlyLeave)
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFDD6B20).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                    child: const Text(
+                                      '早退',
+                                      style: TextStyle(
+                                        color: Color(0xFFDD6B20),
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ],
                         ),
@@ -314,16 +467,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+
                       if (_hasClockedIn) {
                         _markAsClocked(isClockIn: false);
                       } else {
                         _markAsClocked(isClockIn: true);
                       }
+                      if (_isDingtalkInstalled) {
+                        await _dingtalkService.openClockInPage();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('未检测到钉钉应用，请先安装钉钉'),
+                          ),
+                        );
+                        await _dingtalkService.installDingtalk();
+                      }
                     },
                     child: Container(
-                      width: 200,
-                      height: 200,
+                      width: 160,
+                      height: 160,
                       decoration: BoxDecoration(
                         color: primaryColor,
                         shape: BoxShape.circle,
@@ -403,16 +567,52 @@ class _HomeScreenState extends State<HomeScreen> {
     final today = DateFormat('yyyy-MM-dd').format(now);
     final prefs = await SharedPreferences.getInstance();
 
+    // 获取现有的打卡数据
+    final clockDataJson = prefs.getString('clock_data');
+    Map<String, dynamic> clockDataMap = {};
+    if (clockDataJson != null) {
+      clockDataMap = jsonDecode(clockDataJson);
+    }
+
+    DailyClockData dailyData;
+    if (isClockIn) {
+      // 上班打卡
+      dailyData = DailyClockData.clockedIn(
+        date: today,
+        clockInTime: now,
+      );
+    } else {
+      // 下班打卡
+      if (clockDataMap.containsKey(today)) {
+        // 已存在当天数据，更新下班时间
+        final existingData = DailyClockData.fromJson(clockDataMap[today]);
+        dailyData = DailyClockData.clockedIn(
+          date: today,
+          clockInTime: existingData.clockInTime!, // 已打卡，肯定有时间
+          clockOutTime: now,
+        );
+      } else {
+        // 不存在当天数据，创建新数据（这种情况不应该发生，因为下班打卡前应该先上班打卡）
+        dailyData = DailyClockData.clockedIn(
+          date: today,
+          clockInTime: now.subtract(const Duration(hours: 9)), // 假设9小时前上班
+          clockOutTime: now,
+        );
+      }
+    }
+
+    // 更新数据
+    clockDataMap[today] = dailyData.toJson();
+
+    // 保存回SharedPreferences
+    prefs.setString('clock_data', jsonEncode(clockDataMap));
+
     setState(() {
       if (isClockIn) {
         _hasClockedIn = true;
         _lastClockInTime = now;
-        prefs.setBool('clock_in_$today', true);
-        prefs.setString('clock_in_time_$today', now.toIso8601String());
       } else {
-        // 允许随时打下班卡，并覆盖之前的打卡时间
         _lastClockOutTime = now;
-        prefs.setString('clock_out_$today', now.toIso8601String());
       }
 
       // 添加打卡记录
