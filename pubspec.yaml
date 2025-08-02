@@ -48,7 +48,6 @@ dependencies:
     # 打开/检测 App（如钉钉）
   url_launcher: ^6.2.6
   shared_preferences: ^2.2.2
-
   intl: ^0.20.2
   flutter_svg: ^2.0.10
   cupertino_icons: ^1.0.6
