@@ -417,20 +417,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               children:
                               [
                                 GestureDetector(
-                                  onTap: () {
-                                    if (_lastClockOutTime == null) {
-                                      // 调用补卡方法
-                                      _showClockOutOptions();
-                                    }
-                                  },
                                   child: Text(
                                     _lastClockOutTime != null
                                         ? '${_lastClockOutTime!.hour.toString().padLeft(2, '0')}:${_lastClockOutTime!.minute.toString().padLeft(2, '0')}已打卡'
                                         : '未打卡',
                                     style: TextStyle(
-                                      color: _lastClockOutTime != null ? successColor : primaryColor,
+                                      color: _hasClockedIn ? successColor : lightTextColor,
                                       fontSize: 14,
-                                      decoration: _lastClockOutTime == null ? TextDecoration.underline : null,
                                     ),
                                   ),
                                 ),
