@@ -54,6 +54,8 @@ dependencies:
   path_provider: ^2.1.2
   launcher_name: ^1.0.2
   flutter_launcher_icons: ^0.14.4
+  flutter_blue_plus: ^1.35.5
+  android_intent_plus: ^5.3.0
 launcher_name:
   default: "速钉宝"
 flutter_launcher_icons:

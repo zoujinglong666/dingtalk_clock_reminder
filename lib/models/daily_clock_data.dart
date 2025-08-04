@@ -65,15 +65,16 @@ class DailyClockData {
     required DateTime clockInTime,
     DateTime? clockOutTime,
   }) {
+    final day = DateTime.parse(date);
+    final workStartTime = DateTime(day.year, day.month, day.day, 9, 0, 59);
     // 判断是否迟到（9:00:59后）
-    final workStartTime = DateTime.parse(date).copyWith(hour: 9, minute: 0, second: 59);
     // 严格判定：大于9:00:59才算迟到
     final isLate = clockInTime.isAfter(workStartTime);
 
     // 判断是否早退（18:00前）
     bool isEarlyLeave = false;
     if (clockOutTime != null) {
-      final workEndTime = DateTime.parse(date).copyWith(hour: 18, minute: 0);
+      final workEndTime = DateTime(day.year, day.month, day.day, 18, 0);
       // 严格判定：小于18:00才算早退
       isEarlyLeave = clockOutTime.isBefore(workEndTime);
     }
@@ -87,4 +88,46 @@ class DailyClockData {
       isEarlyLeave: isEarlyLeave,
     );
   }
+
+
+
+  DailyClockData copyWith({
+    String? date,
+    bool? hasClockedIn,
+    DateTime? clockInTime,
+    DateTime? clockOutTime,
+    bool? isLate,
+    bool? isEarlyLeave,
+  }) {
+    return DailyClockData(
+      date: date ?? this.date,
+      hasClockedIn: hasClockedIn ?? this.hasClockedIn,
+      clockInTime: clockInTime ?? this.clockInTime,
+      clockOutTime: clockOutTime ?? this.clockOutTime,
+      isLate: isLate ?? this.isLate,
+      isEarlyLeave: isEarlyLeave ?? this.isEarlyLeave,
+    );
+  }
+  static bool checkIsLate(String date, DateTime clockInTime) {
+    final day = DateTime.parse(date);
+    final threshold = DateTime(day.year, day.month, day.day, 9, 0, 59);
+    return clockInTime.isAfter(threshold);
+  }
+
+  static bool checkIsEarlyLeave(String date, DateTime clockOutTime) {
+    final day = DateTime.parse(date);
+    final threshold = DateTime(day.year, day.month, day.day, 18, 0);
+    return clockOutTime.isBefore(threshold);
+  }
+  DailyClockData updateStatus() {
+    return DailyClockData(
+      date: date,
+      hasClockedIn: hasClockedIn,
+      clockInTime: clockInTime,
+      clockOutTime: clockOutTime,
+      isLate: clockInTime != null ? DailyClockData.checkIsLate(date, clockInTime!) : false,
+      isEarlyLeave: clockOutTime != null ? DailyClockData.checkIsEarlyLeave(date, clockOutTime!) : false,
+    );
+  }
+
 }

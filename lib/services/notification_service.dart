@@ -83,7 +83,7 @@ class NotificationService {
     return {
       'enableSound': prefs.getBool('enableSound') ?? true,
       'enableVibration': prefs.getBool('enableVibration') ?? true,
-      'selectedRingtone': prefs.getString('selectedRingtone') ?? '默认铃声',
+      'selectedRingtone': prefs.getString('selectedRingtone') ,
       'volume': prefs.getDouble('reminderVolume') ?? 1.0,
     };
   }

@@ -19,7 +19,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
   // 提醒设置选项
   bool _enableVibration = true;
   bool _enableSound = true;
-  String _selectedRingtone = '默认铃声';
+  String _selectedRingtone = '';
   double _volume = 1.0; // 0.0 到 1.0 之间
 
   // 通知服务
@@ -27,7 +27,6 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
 
   // 可用铃声列表
   final List<String> _ringtones = [
-    '默认铃声',
     'dingdong',
     'soft_music',
     'classic_alarm',
@@ -36,7 +35,6 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
 
   // 显示给用户的铃声名称
   final List<String> _ringtoneDisplayNames = [
-    '默认铃声',
     '叮咚声',
     '柔和音乐',
     '经典闹钟',
@@ -61,7 +59,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     setState(() {
       _enableVibration = prefs.getBool('enableVibration') ?? true;
       _enableSound = prefs.getBool('enableSound') ?? true;
-      _selectedRingtone = prefs.getString('selectedRingtone') ?? '默认铃声';
+      _selectedRingtone = prefs.getString('selectedRingtone')??'';
       _volume = prefs.getDouble('reminderVolume') ?? 1.0;
     });
   }
