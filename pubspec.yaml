@@ -56,6 +56,10 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_blue_plus: ^1.35.5
   android_intent_plus: ^5.3.0
+  bot_toast: ^4.1.0
+  tdesign_flutter: ^0.2.2
+  tdesign_flutter_adaptation: ^3.32.0
+  image_picker: 1.1.2
 launcher_name:
   default: "速钉宝"
 flutter_launcher_icons:

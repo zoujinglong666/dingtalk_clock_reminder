@@ -1,3 +1,5 @@
+import 'package:bot_toast/bot_toast.dart';
+import 'package:dingtalk_clock_reminder/screens/index_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -28,7 +30,7 @@ void main() async {
 
   runApp(const MyApp());
 }
-
+final botToastBuilder = BotToastInit();
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -41,6 +43,13 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
+      builder: (context, child) {
+        child = botToastBuilder(context, child);
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+          child: child!,
+        );
+      },
       home: const MainNavigation(),
     );
   }
@@ -61,7 +70,7 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
   final List<Widget> _pages = [
-    const HomeScreen(),
+    const IndexPage(),
     const CalendarScreen(),
     const SettingsScreen(),
   ];

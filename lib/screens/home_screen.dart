@@ -6,7 +6,6 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../models/clock_record.dart';
 import '../models/daily_clock_data.dart';
 import '../services/alarm_service.dart';
@@ -410,11 +409,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: backgroundColor,
+      appBar:AppBar(
+        backgroundColor: cardColor,
         elevation: 0,
-        leading: const BackButton(color: textColor),
-        centerTitle: false,
+        centerTitle: true,
+        title: const Text(
+          '速钉打卡',
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),

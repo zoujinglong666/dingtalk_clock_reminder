@@ -113,7 +113,7 @@ class _ClockCalendarState extends State<ClockCalendar> {
     final weekTitles = Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(7, (index) {
-        final weekday = (index + 1) % 7; // 0-6, Monday is 0
+        final weekday = index; // 0-6, Monday is 0
         return Flexible(
           fit: FlexFit.loose,
           child: Center(

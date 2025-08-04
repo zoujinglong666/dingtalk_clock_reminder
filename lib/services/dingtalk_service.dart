@@ -62,4 +62,14 @@ class DingtalkService {
     // await openDingtalk();
 
   }
+
+  void openDingTalkWriteLogPage() {
+    final intent = AndroidIntent(
+      action: 'action_view',
+      data: 'dingtalk://dingtalkclient/page/link?url=https://workspace.dingtalk.com/oalog/homepage/new',
+      package: 'com.alibaba.android.rimet',
+      flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
+    );
+    intent.launch();
+  }
 }
