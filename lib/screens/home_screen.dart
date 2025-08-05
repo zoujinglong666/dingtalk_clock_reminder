@@ -89,7 +89,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_currentTime.hour == 18 && _currentTime.minute == 0 && _currentTime.second == 0) {
         await _loadClockStatus();
       }
-
       // 每60秒重新加载一次打卡状态，确保状态与时间匹配
       else if (_currentTime.second == 0) {
         await _loadClockStatus();
@@ -135,6 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 打卡状态
   bool _hasClockedIn = false; // 是否已上班打卡
+  bool _hasClockedOut = false;
   DateTime? _lastClockInTime; // 最后一次上班打卡时间
   DateTime? _lastClockOutTime; // 最后一次下班打卡时间
   bool _isLate = false; // 是否迟到
@@ -164,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (clockDataJson != null) {
       clockDataMap = jsonDecode(clockDataJson);
     }
-    
+
     setState(() {
       if (clockDataMap.containsKey(today)) {
         final dailyData = DailyClockData.fromJson(clockDataMap[today]);
@@ -173,15 +173,21 @@ class _HomeScreenState extends State<HomeScreen> {
         _lastClockOutTime = dailyData.clockOutTime;
         _isLate = dailyData.isLate;
         _isEarlyLeave = dailyData.isEarlyLeave;
+
+        // ✅ 加上这一行
+        _hasClockedOut = dailyData.clockOutTime != null;
       } else {
-        // 不存在当天数据
         _hasClockedIn = false;
         _lastClockInTime = null;
         _lastClockOutTime = null;
         _isLate = false;
         _isEarlyLeave = false;
+
+        // ✅ 初始化为 false
+        _hasClockedOut = false;
       }
     });
+
   }
 
   Future<void> _scheduleAlarms() async {
@@ -190,87 +196,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // 显示下班补卡时间选择器
-  Future<void> _showClockOutOptions() async {
-    final initialTime = const TimeOfDay(hour: 18, minute: 0);
-
-    final selectedTime = await showTimePicker(
-      context: context,
-      initialTime: initialTime,
-      builder: (BuildContext context, Widget? child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-          child: child!,
-        );
-      },
-    );
-
-    if (selectedTime != null) {
-      final now = DateTime.now();
-      final clockTime = DateTime(now.year, now.month, now.day, selectedTime.hour, selectedTime.minute);
-      await _markAsClockedOut(clockTime);
-    }
-  }
-
-  // 下班补卡实现
-  Future<void> _markAsClockedOut(DateTime clockTime) async {
-    final prefs = await SharedPreferences.getInstance();
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-
-    // 获取现有的打卡数据
-    final clockDataJson = prefs.getString('clock_data');
-    Map<String, dynamic> clockDataMap = {};
-    if (clockDataJson != null) {
-      clockDataMap = jsonDecode(clockDataJson);
-    }
-
-    DailyClockData dailyData;
-    if (clockDataMap.containsKey(today)) {
-      // 已存在当天数据，更新下班打卡时间
-      final existingData = DailyClockData.fromJson(clockDataMap[today]);
-      if (existingData.hasClockedIn) {
-        // 已经上班打卡，直接更新下班时间
-        dailyData = DailyClockData.clockedIn(
-          date: today,
-          clockInTime: existingData.clockInTime!,
-          clockOutTime: clockTime,
-        );
-      } else {
-        // 没有上班打卡记录，先创建上班打卡记录（默认9:00）
-        dailyData = DailyClockData.clockedIn(
-          date: today,
-          clockInTime: DateTime.now().copyWith(hour: 9, minute: 0),
-          clockOutTime: clockTime,
-        );
-      }
-    } else {
-      // 不存在当天数据，创建新数据（包括默认上班打卡）
-      dailyData = DailyClockData.clockedIn(
-        date: today,
-        clockInTime: DateTime.now().copyWith(hour: 9, minute: 0),
-        clockOutTime: clockTime,
-      );
-    }
-
-    // 更新数据
-    clockDataMap[today] = dailyData.toJson();
-
-    // 保存回SharedPreferences
-    prefs.setString('clock_data', jsonEncode(clockDataMap));
-
-    // 更新UI
-    setState(() {
-      _lastClockOutTime = clockTime;
-      _isEarlyLeave = clockTime.hour < 18 || (clockTime.hour == 18 && clockTime.minute < 0);
-    });
-
-    // 显示补卡成功通知
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('下班补卡成功'),
-      ),
-    );
-  }
 
   Future<void> _startForegroundService() async {
     // 初始化前台任务
@@ -544,7 +469,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           .toString().padLeft(2, '0')}已打卡'
                                           : '未打卡',
                                       style: TextStyle(
-                                        color: _hasClockedIn
+                                        color: _hasClockedOut
                                             ? successColor
                                             : lightTextColor,
                                         fontSize: 14,
@@ -746,6 +671,9 @@ class _HomeScreenState extends State<HomeScreen> {
       } else {
         _lastClockOutTime = clockOutTime;
         _isEarlyLeave = isEarlyLeave;
+
+        // ✅ 补上这一行
+        _hasClockedOut = true;
       }
 
       _clockRecords.add(ClockRecord(
@@ -755,6 +683,7 @@ class _HomeScreenState extends State<HomeScreen> {
         type: isClockIn ? ClockType.clockIn : ClockType.clockOut,
       ));
     });
+
 
     // 通知用户
     await _notificationService.showNotification(

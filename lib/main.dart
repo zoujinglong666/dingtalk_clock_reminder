@@ -1,5 +1,4 @@
 import 'package:bot_toast/bot_toast.dart';
-import 'package:dingtalk_clock_reminder/screens/index_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -70,7 +69,7 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
   final List<Widget> _pages = [
-    const IndexPage(),
+    const HomeScreen(),
     const CalendarScreen(),
     const SettingsScreen(),
   ];
