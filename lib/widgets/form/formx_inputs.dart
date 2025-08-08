@@ -4,10 +4,12 @@ import 'package:flutter/services.dart';
 import 'core/formx.dart';
 import 'core/formx_validator.dart';
 import 'fields/formx_field_text.dart';
+import 'fields/formx_field_text_captcha.dart';
+import 'fields/formx_field_text_mobile.dart';
+import 'fields/formx_field_textarea.dart';
 import 'formx_widget.dart';
 
 
-/// 自定义构建器
 typedef InputBuilder = Widget Function(
     BuildContext context, // 上下文构建对象
     FormInput parent, // 父表单组件
@@ -24,9 +26,14 @@ typedef InputBuilder = Widget Function(
 ///
 /// // 输入类组件
 /// Input.text(...); // 普通文本输入
+/// Input.password(...); // 密码输入
+/// Input.mobile(...);   // 手机号码输入（右侧有发送验证码）
+/// Input.captcha(...);  // 图形验证码（右侧有图形演示吗）
 /// Input.textarea(...); // 文本域
 /// ```
-
+///
+/// * @author xbaistack
+/// * @source B站/抖音/小红书/公众号（@小白栈记）
 class Input<T> {
   /// 直接定义组件内容
   final Widget? child;
@@ -54,9 +61,7 @@ class Input<T> {
 
   @override
   String toString() {
-    return debugLabel == null
-        ? super.toString()
-        : "$runtimeType -> <$debugLabel>";
+    return debugLabel == null ? super.toString() : "$debugLabel";
   }
 
   /// 核心构建方法
@@ -340,13 +345,11 @@ class Input<T> {
     FieldTransformer<String, String>? converter,
     FieldTransformer<String, String>? transformer,
   }) {
-
-    //todo 需要改造成文本域组件
     return Input(
       showOnEnabled: showOnEnabled,
       hideOnDisabled: hideOnDisabled,
       debugLabel: "FormXFieldTextArea($name)",
-      builder: (ctx, parent, index) => FormXFieldText(
+      builder: (ctx, parent, index) => FormXFieldTextArea(
         key: key,
         name: name,
         label: label,
@@ -359,7 +362,7 @@ class Input<T> {
         enabled: enabled ?? parent.enabled,
         restorationId: restorationId,
         showCounter: showCounter,
-        // maxLines: maxLines,
+        maxLines: maxLines,
         maxLength: maxLength,
         maxLengthEnforcement: maxLengthEnforcement,
         focusNode: focusNode,
@@ -367,6 +370,161 @@ class Input<T> {
         inputAction: inputAction,
         inputType: inputType,
         inputFormatters: inputFormatters,
+        controller: controller,
+        validator: validator,
+        renderer: renderer,
+        converter: converter,
+        transformer: transformer,
+        background: parent.background,
+        textStyle: parent.textStyle,
+        emptyTextStyle: parent.emptyTextStyle,
+        subtitleTextStyle: parent.subtitleTextStyle,
+        labelTextStyle: parent.labelTextStyle,
+        errorTextStyle: parent.errorTextStyle,
+        descriptionTextStyle: parent.descriptionTextStyle,
+        onTap: onTap,
+        onSaved: onSaved,
+        onReset: onReset,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        onEditingComplete: onEditingComplete,
+      ),
+    );
+  }
+
+  /// 手机号码输入表单组件（右侧有发送验证码的功能）
+  factory Input.mobile({
+    Key? key,
+    required String name,
+    required String label,
+    String? restorationId,
+    String? placeholder,
+    bool? debug,
+    bool? enabled,
+    bool required = false,
+    bool showClear = true,
+    bool? showOnEnabled,
+    bool? hideOnDisabled,
+    int? maxLines,
+    int? maxLength,
+    int? countdown,
+    Widget? left,
+    Icon? leftIcon,
+    FocusNode? focusNode,
+    TextAlign textAlign = TextAlign.start,
+    TextInputAction? inputAction,
+    TextEditingController? controller,
+    MaxLengthEnforcement? maxLengthEnforcement,
+    VoidCallback? onTap,
+    VoidCallback? onClear,
+    ValueChanged<String?>? onSaved,
+    ValueChanged<String?>? onReset,
+    ValueChanged<String?>? onChanged,
+    ValueChanged<String?>? onSubmitted,
+    VoidCallback? onEditingComplete,
+    List<Validator<String>>? validator,
+    FieldTransformer<String, String>? renderer,
+    FieldTransformer<String, String>? converter,
+    FieldTransformer<String, String>? transformer,
+  }) {
+    return Input(
+      showOnEnabled: showOnEnabled,
+      hideOnDisabled: hideOnDisabled,
+      debugLabel: "FormXFieldTextMobile($name)",
+      builder: (ctx, parent, index) => FormXFieldTextMobile(
+        key: key,
+        name: name,
+        label: label,
+        left: left,
+        leftIcon: leftIcon,
+        empty: parent.empty,
+        placeholder: placeholder,
+        debug: debug ?? parent.debug,
+        required: required,
+        enabled: enabled ?? parent.enabled,
+        restorationId: restorationId,
+        countdown: countdown,
+        maxLength: maxLength,
+        maxLengthEnforcement: maxLengthEnforcement,
+        focusNode: focusNode,
+        textAlign: textAlign,
+        inputAction: inputAction,
+        controller: controller,
+        validator: validator,
+        renderer: renderer,
+        converter: converter,
+        transformer: transformer,
+        background: parent.background,
+        textStyle: parent.textStyle,
+        emptyTextStyle: parent.emptyTextStyle,
+        subtitleTextStyle: parent.subtitleTextStyle,
+        labelTextStyle: parent.labelTextStyle,
+        errorTextStyle: parent.errorTextStyle,
+        descriptionTextStyle: parent.descriptionTextStyle,
+        onTap: onTap,
+        onSaved: onSaved,
+        onReset: onReset,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        onEditingComplete: onEditingComplete,
+      ),
+    );
+  }
+
+  /// 图形验证码组件
+  factory Input.captcha({
+    Key? key,
+    required String name,
+    required String label,
+    String? restorationId,
+    String? placeholder,
+    bool? debug,
+    bool? enabled,
+    bool required = false,
+    bool showClear = true,
+    bool? showOnEnabled,
+    bool? hideOnDisabled,
+    int? maxLength,
+    Widget? left,
+    Icon? leftIcon,
+    FocusNode? focusNode,
+    TextAlign textAlign = TextAlign.start,
+    TextInputAction? inputAction,
+    TextEditingController? controller,
+    MaxLengthEnforcement? maxLengthEnforcement,
+    VoidCallback? onTap,
+    VoidCallback? onClear,
+    ValueChanged<String?>? onSaved,
+    ValueChanged<String?>? onReset,
+    ValueChanged<String?>? onChanged,
+    ValueChanged<String?>? onSubmitted,
+    VoidCallback? onEditingComplete,
+    List<Validator<String>>? validator,
+    FieldTransformer<String, String>? renderer,
+    FieldTransformer<String, String>? converter,
+    FieldTransformer<String, String>? transformer,
+  }) {
+    return Input(
+      showOnEnabled: showOnEnabled,
+      hideOnDisabled: hideOnDisabled,
+      debugLabel: "FormXFieldTextCaptcha($name)",
+      builder: (ctx, parent, index) => FormXFieldTextCaptcha(
+        key: key,
+        name: name,
+        label: label,
+        left: left,
+        leftIcon: leftIcon,
+        empty: parent.empty,
+        placeholder: placeholder,
+        debug: debug ?? parent.debug,
+        required: required,
+        enabled: enabled ?? parent.enabled,
+        restorationId: restorationId,
+        maxLength: maxLength,
+        maxLengthEnforcement: maxLengthEnforcement,
+        focusNode: focusNode,
+        textAlign: textAlign,
+        inputAction: inputAction,
         controller: controller,
         validator: validator,
         renderer: renderer,

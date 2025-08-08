@@ -11,12 +11,13 @@ import 'formx_field_text.dart';
 /// 文本域输入表单组件
 
 class FormXFieldTextArea<OUT>
-    extends FormXFieldDecoration<FormXFieldText<OUT>, String, OUT> {
+    extends FormXFieldDecoration<FormXFieldTextArea<OUT>, String, OUT> {
   final bool? password;
   final bool? showClear;
   final bool? showCounter;
 
   final int? maxLength;
+  final int? maxLines;
   final FocusNode? focusNode;
 
   final TextAlign textAlign;
@@ -65,6 +66,7 @@ class FormXFieldTextArea<OUT>
     this.showClear,
     this.showCounter,
     this.maxLength,
+    this.maxLines,
     this.focusNode,
     this.textAlign = TextAlign.start,
     this.inputType,
@@ -80,21 +82,21 @@ class FormXFieldTextArea<OUT>
 
   @override
   EdgeInsets ofBoxPadding(
-      FormXFieldState<FormXFieldText<OUT>, String, OUT> field) {
+      FormXFieldState<FormXFieldTextArea<OUT>, String, OUT> field) {
     return field.enabled ? EdgeInsets.only(left: padding) : insets();
   }
 
   @override
   void ofItems(
       List<Widget> items,
-      FormXFieldState<FormXFieldText<OUT>, String, OUT> field,
+      FormXFieldState<FormXFieldTextArea<OUT>, String, OUT> field,
       ) {
     // 如果当前是只读模式就直接渲染值就行了
     if (field.readOnly) {
       return items.add(super.ofValueLabel(field, field.rawValue));
     }
     // 编辑模式下我们需要将 InputText 输入组件组装到容器中
-    final state = field as FormXFieldTextState;
+    final state = field as FormXFieldTextAreaState;
     items.add(Expanded(
       child: InputText(
         enabled: field.enabled,
@@ -124,11 +126,11 @@ class FormXFieldTextArea<OUT>
   }
 
   @override
-  State<StatefulWidget> createState() => FormXFieldTextState<OUT>();
+  State<StatefulWidget> createState() => FormXFieldTextAreaState<OUT>();
 }
 
-class FormXFieldTextState<OUT>
-    extends FormXFieldState<FormXFieldText<OUT>, String, OUT> {
+class FormXFieldTextAreaState<OUT>
+    extends FormXFieldState<FormXFieldTextArea<OUT>, String, OUT> {
   late FocusNode focusNode;
   late FocusAttachment focusAttachment;
   late TextEditingController controller;
@@ -155,6 +157,15 @@ class FormXFieldTextState<OUT>
       _updateControllerValue(inputValue);
     }
   }
+  
+  @override
+  void reset() {
+    super.reset();
+    // 在重置时更新controller的值，避免controller与rawValue不同步
+    if (initialized) {
+      _updateControllerValue(initialValue);
+    }
+  }
 
   @override
   void initState() {
@@ -167,7 +178,7 @@ class FormXFieldTextState<OUT>
   }
 
   @override
-  void didUpdateWidget(covariant FormXFieldText<OUT> oldWidget) {
+  void didUpdateWidget(covariant FormXFieldTextArea<OUT> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.focusNode != oldWidget.focusNode) {
       focusNode.removeListener(_handleFocusChanged);
@@ -184,7 +195,6 @@ class FormXFieldTextState<OUT>
 
   @override
   void dispose() {
-    super.dispose();
     focusAttachment.detach();
     if (widget.controller == null) {
       controller.dispose();
@@ -192,6 +202,7 @@ class FormXFieldTextState<OUT>
     if (widget.focusNode == null) {
       focusNode.dispose();
     }
+    super.dispose();
   }
 
   void _handleValueChanged() {

@@ -161,6 +161,7 @@ final class FormInput extends StatelessWidget {
     final newList = <Input>[];
     for (int index = 0, size = children.length; index < size; index++) {
       final input = children[index];
+
       if (enabled) {
         if (input.showOnEnabled) {
           newList.add(input);
@@ -173,4 +174,7 @@ final class FormInput extends StatelessWidget {
     }
     return newList;
   }
+
+
+
 }

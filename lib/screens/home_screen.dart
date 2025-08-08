@@ -157,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final prefs = await SharedPreferences.getInstance();
     // 加载今天的打卡状态
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    
+
     // 从新的数据结构加载
     final clockDataJson = prefs.getString('clock_data');
     Map<String, dynamic> clockDataMap = {};
@@ -312,12 +312,6 @@ class _HomeScreenState extends State<HomeScreen> {
         clockDataMap[today] = updatedDailyData.toJson();
         await prefs.setString('clock_data', jsonEncode(clockDataMap));
 
-        print("✅ ${type == ClockType.clockIn
-            ? "上班"
-            : "下班"}时间已保存: ${type == ClockType.clockIn
-            ? _lastClockInTime
-            : _lastClockOutTime}");
-        print("⏰ 是否迟到: $_isLate, 是否早退: $_isEarlyLeave");
       },
     );
   }
@@ -367,10 +361,32 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const Text('上班09:00', style: bodyStyle),
-                            const SizedBox(height: 4),
                             Row(
-
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text('上班09:00', style: bodyStyle),
+                                if (_hasClockedIn && _isLate)
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: errorColor.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(
+                                          2),
+                                    ),
+                                    child: const Text(
+                                      '迟到',
+                                      style: TextStyle(
+                                        color: errorColor,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
@@ -400,24 +416,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         fontSize: 14,
                                       ),
                                     ),
-                                    if (_hasClockedIn && _isLate)
-                                      Container(
-                                        margin: const EdgeInsets.only(top: 2),
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 4, vertical: 1),
-                                        decoration: BoxDecoration(
-                                          color: errorColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(
-                                              2),
-                                        ),
-                                        child: const Text(
-                                          '迟到',
-                                          style: TextStyle(
-                                            color: errorColor,
-                                            fontSize: 10,
-                                          ),
-                                        ),
-                                      ),
+
                                   ],
                                 ),
                               ],
@@ -441,8 +440,33 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Text('下班18:00', style: bodyStyle),
-                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('下班18:00', style: bodyStyle),
+                              const SizedBox(height: 4),
+                              if (_lastClockOutTime != null &&
+                                  _isEarlyLeave)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDD6B20)
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                  child: const Text(
+                                    '早退',
+                                    style: TextStyle(
+                                      color: Color(0xFFDD6B20),
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -476,25 +500,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                   ),
-                                  if (_lastClockOutTime != null &&
-                                      _isEarlyLeave)
-                                    Container(
-                                      margin: const EdgeInsets.only(top: 2),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFDD6B20)
-                                            .withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(2),
-                                      ),
-                                      child: const Text(
-                                        '早退',
-                                        style: TextStyle(
-                                          color: Color(0xFFDD6B20),
-                                          fontSize: 10,
-                                        ),
-                                      ),
-                                    ),
+
                                 ],
                               ),
                             ],
@@ -694,3 +700,5 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
 }
+
+

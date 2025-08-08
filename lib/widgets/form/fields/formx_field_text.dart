@@ -156,6 +156,15 @@ class FormXFieldTextState<OUT>
   }
 
   @override
+  void reset() {
+    super.reset();
+    // 在重置时更新controller的值，避免controller与rawValue不同步
+    if (initialized) {
+      _updateControllerValue(initialValue);
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
     controller = widget.controller ?? TextEditingController(text: rawValue);
@@ -183,7 +192,6 @@ class FormXFieldTextState<OUT>
 
   @override
   void dispose() {
-    super.dispose();
     focusAttachment.detach();
     if (widget.controller == null) {
       controller.dispose();
@@ -191,6 +199,7 @@ class FormXFieldTextState<OUT>
     if (widget.focusNode == null) {
       focusNode.dispose();
     }
+    super.dispose();
   }
 
   void _handleValueChanged() {

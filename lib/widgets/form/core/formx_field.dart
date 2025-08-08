@@ -233,7 +233,6 @@ class FormXFieldState<W extends FormXField<W, IN, OUT>, IN, OUT>
     }
     _resetError();
     setValue(initialValue);
-    widget.dispose();
     widget.onReset?.call(rawValue);
     rebuild();
   }
@@ -334,7 +333,7 @@ class FormXFieldState<W extends FormXField<W, IN, OUT>, IN, OUT>
   void didUpdateWidget(covariant W oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.name != oldWidget.name) {
-      _form?._unregister(widget.name, this);
+      _form?._unregister(oldWidget.name, this);
       _form?._register(widget.name, this);
     }
     if (widget.validator != oldWidget.validator ||
@@ -347,7 +346,6 @@ class FormXFieldState<W extends FormXField<W, IN, OUT>, IN, OUT>
   @override
   void dispose() {
     super.dispose();
-    widget.dispose();
     _form?._unregister(widget.name, this);
   }
 

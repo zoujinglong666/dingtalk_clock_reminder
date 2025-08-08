@@ -196,7 +196,7 @@ class FormXState extends State<FormX> {
 
   /// 解绑表单组件
   void _unregister(String name, FormXFieldState field) {
-    if (_fields.containsKey(name) && _fields[name] != field) {
+    if (_fields.containsKey(name) && _fields[name] == field) {
       _fields.remove(name);
       _savedValues.remove(name);
       _formValues.remove(name);
